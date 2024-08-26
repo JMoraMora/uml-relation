@@ -46,3 +46,5 @@ class Bus
 
 # De esta forma tenemos la clase bus que se compone por piso y la clase piso se compone por asientos
 $busAF001 = new Bus('AF001', [ 1 => 30]);
+
+echo '<pre>' . print_r($busAF001, true) . '</pre>';die;
