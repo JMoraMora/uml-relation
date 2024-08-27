@@ -53,7 +53,7 @@ class CashBox
 
     public function addTransaction(Transaction $transaction): void
     {
-        if($this->statusCashBox::CLOSE) {
+        if($this->statusCashBox == StatusCashBox::CLOSE) {
             throw new Exception('La caja ya se encuentra cerrada');
         }
 
@@ -131,7 +131,7 @@ class Seller
         $keys = array_keys($filter);
         $key = $keys[0];
      
-        $transaction = new Transaction(TypeTransaction::IN, 50, ['seller' => $this->name]);
+        $transaction = new Transaction(TypeTransaction::IN, 50);
         $this->cashbox[$key]->addTransaction($transaction);
     }
 
@@ -192,11 +192,14 @@ $ana->assigDoc($assigBoleta);
 # Mario va a vender dos productos y el cliente le solicito una factura
 $mario->openCashBox($cajaMario);
 $mario->sell();
+$mario->sell();
+$mario->sell();
+$mario->sell();
 
 
 // $ana->sell($caja01);
 // $mario->sell($caja01);
 
-// $cajaMario->showReport();
+$cajaMario->showReport();
 
 
