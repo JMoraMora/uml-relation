@@ -40,16 +40,23 @@ class CashBox
     private $iniAmount;
     private $endAmount;
     private $transactions;
+    private StatusCashBox $statusCashBox;
+    private Seller $seller;
 
     function __construct(float $iniAmount = 0)
     {
         $this->iniAmount = $iniAmount;
         $this->endAmount = $iniAmount;
         $this->transactions = [];
+        $this->statusCashBox = StatusCashBox::OPEN;
     }
 
     public function addTransaction(Transaction $transaction): void
     {
+        if($this->statusCashBox::CLOSE) {
+            throw new Exception('La caja ya se encuentra cerrada');
+        }
+
         $this->transactions[] = $transaction;
 
         if($transaction->getType() == TypeTransaction::IN->value) {
@@ -59,6 +66,21 @@ class CashBox
         if($transaction->getType() == TypeTransaction::OUT->value) {
             $this->endAmount -= $transaction->getAmount();
         }
+    }
+
+    public function setStatusCashBox(StatusCashBox $statusCashBox) 
+    {
+        $this->statusCashBox = $statusCashBox;
+    }
+
+    public function setSeller(Seller $seller) 
+    {
+        $this->seller = $seller;
+    }
+
+    public function getStatusCashBox(): string
+    {
+        return $this->statusCashBox->value;
     }
 
     public function showReport()
@@ -74,15 +96,23 @@ class CashBox
     }
 }
 
+enum StatusCashBox: string 
+{
+    case OPEN = 'OPEN';
+    case CLOSE = 'CLOSE';
+}
+
 class Seller
 {
-    private $name; 
-    private $assigDoc;
+    private string $name; 
+    private array $assigDoc;
+    private array $cashbox;
 
     function __construct($name)
     {
         $this->name = $name;
         $this->assigDoc = [];
+        $this->cashbox = [];
     }
 
     public function getName(): string
@@ -95,10 +125,26 @@ class Seller
         $this->assigDoc[] = $assignmentSerie;
     }
 
-    public function sell(CashBox $cashbox): void
+    public function sell(): void
     {
+        $filter = array_filter($this->cashbox, fn($item) => $item->getStatusCashBox() == 'OPEN');
+        $keys = array_keys($filter);
+        $key = $keys[0];
+     
         $transaction = new Transaction(TypeTransaction::IN, 50, ['seller' => $this->name]);
-        $cashbox->addTransaction($transaction);
+        $this->cashbox[$key]->addTransaction($transaction);
+    }
+
+    public function openCashBox(CashBox $cashbox)
+    {
+        $cashbox->setSeller($this);
+        $cashbox->setStatusCashBox(StatusCashBox::OPEN);
+        $this->cashbox[] = $cashbox;
+    }
+
+    public function closeCashBox(CashBox $cashbox)
+    {
+        $cashbox->setStatusCashBox(StatusCashBox::CLOSE);
     }
 }
 
@@ -128,7 +174,7 @@ enum TypeDocument: string
 }
 
 # Aperturamos una caja
-$caja01 = new CashBox(100);
+$cajaMario = new CashBox(100);
 
 # Tenemos a dos vendedores en la tienda
 $mario = new Seller('Mario');
@@ -144,8 +190,13 @@ $mario->assigDoc($assigFactura);
 $ana->assigDoc($assigBoleta);
 
 # Mario va a vender dos productos y el cliente le solicito una factura
-$mario->sell($caja01);
+$mario->openCashBox($cajaMario);
+$mario->sell();
 
-$caja01->showReport();
+
+// $ana->sell($caja01);
+// $mario->sell($caja01);
+
+// $cajaMario->showReport();
 
 
